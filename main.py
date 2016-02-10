@@ -4,11 +4,7 @@ import img2pdf
 import re
 import os
 import argparse
-
 from bs4 import BeautifulSoup
-
-MANGA_URL = "http://mangapark.me/manga/ajin-miura-tsuina/"
-URL_TO_PARSE = "http://mangapark.me/manga/ajin-miura-tsuina/s5/c19"
 
 def parse_url_to_manga_info(url):
     url = re.sub('http://', '', url)
@@ -16,12 +12,14 @@ def parse_url_to_manga_info(url):
     title = url.split("/")[0]
     return title
 
+
 def parse_url_to_chapter_info(url):
     url = re.sub("http://", '', url)
     url = re.sub("mangapark.me", '', url)
     url = re.sub("/manga/", '', url)
     title, version, chapter = url.split("/")
     return title, version, chapter, url
+
 
 def ensure_directory_exist(directory):
     if not os.path.exists(directory):
@@ -47,6 +45,7 @@ def input_images(path):
     if len(rawdata) == 0:
         raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
     return rawdata
+
 
 def convert_to_pdf(os_dir, chapter, filenames):
     pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames])
@@ -75,8 +74,6 @@ def download_chapter(url):
 
     convert_to_pdf(os_dir, chapter, filenames)
 
-def find_best_stream(streams):
-    pass
 
 def download_manga(url, chapter=False, min_max=False):
     page = urllib.request.urlopen(url)
@@ -103,8 +100,7 @@ def download_manga(url, chapter=False, min_max=False):
         if min_max and chapter_no >= min_max[0] and chapter_no <= min_max[1]:
             download_chapter(chapter_url)
             continue
-        else :
-            continue
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -123,13 +119,6 @@ def main():
     elif args.chapter != None:
         download_manga(args.manga_url, chapter=int(args.chapter))
 
-    
 
 if __name__ == "__main__":
     main()
-    
-
-
-
-
-## parse_url(URL_TO_PARSE)# min_max = (19, 40)# download_manga(MANGA_URL, min_max)
