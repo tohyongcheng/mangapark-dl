@@ -48,9 +48,11 @@ def input_images(path):
 
 
 def convert_to_pdf(os_dir, chapter, filenames):
+    print("Converting chapter %s to pdf..." % chapter)
     pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames])
     file = open("%s/%s.pdf" % (os_dir, chapter), "wb")
     file.write(pdf_bytes)
+    print("Conversion completed!")
 
 
 def download_chapter(url):
@@ -80,7 +82,6 @@ def download_manga(url, chapter=False, min_max=False):
     soup = BeautifulSoup(page)
 
     streams = soup.find_all("div", {"class": "stream"})
-    best_stream = find_best_stream(streams)
     stream_lens = []
     for stream in streams:
         chapters = stream.find_all("li")
@@ -114,8 +115,8 @@ def main():
         print("Please specify the URL of the manga on mangapark.me")
         return
     elif args.chapters != None:
-        assert isinstance(args.chapters, tuple)
-        download_manga(args.manga_url, chapters=[int(x) for x in args.chapters])
+        assert isinstance(args.chapters, list)
+        download_manga(args.manga_url, min_max=[float(x) for x in args.chapters])
     elif args.chapter != None:
         download_manga(args.manga_url, chapter=int(args.chapter))
 
