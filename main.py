@@ -17,7 +17,16 @@ def parse_url_to_chapter_info(url):
     url = re.sub("http://", '', url)
     url = re.sub("mangapark.me", '', url)
     url = re.sub("/manga/", '', url)
-    title, _, version, chapter = url.split("/")
+
+    # compensate for mangapark's different url formatting schemes
+    title, version, chapter = None, None, None
+    if len(url.split("/")) == 3:
+        title, version, chapter = url.split("/")
+    elif len(url.split("/")):
+        title, _, version, chapter = url.split("/")
+    else:
+        raise ValueError("Couldn't parse URL")
+
     return title, version, chapter, url
 
 
