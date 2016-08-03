@@ -58,7 +58,23 @@ def input_images(path):
 
 def convert_to_pdf(os_dir, chapter, filenames):
     print("Converting chapter %s to pdf..." % chapter)
-    pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames])
+
+    pdf_bytes = None
+    try:
+        pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames])
+    except img2pdf.PdfTooLargeError:
+        # Sometimes the images are registered as having a dpi of 1.
+        # Because PDF has a limitation of 200 iches max per side, a
+        # special layout_fun has to be used, as to prevent an exception.
+
+        # default manga size 5"x7"
+        layout_fun = img2pdf.get_layout_fun(pagesize=(None, img2pdf.in_to_pt(7)),
+                                            imgsize=None, border=None,
+                                            fit=img2pdf.FitMode.into,
+                                            auto_orient=False)
+        pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames],
+                                    layout_fun=layout_fun)
+
     file = open("%s/%s.pdf" % (os_dir, chapter), "wb")
     file.write(pdf_bytes)
     print("Conversion completed!")
