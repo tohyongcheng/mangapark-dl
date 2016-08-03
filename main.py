@@ -17,7 +17,7 @@ def parse_url_to_chapter_info(url):
     url = re.sub("http://", '', url)
     url = re.sub("mangapark.me", '', url)
     url = re.sub("/manga/", '', url)
-    title, version, chapter = url.split("/")
+    title, _, version, chapter = url.split("/")
     return title, version, chapter, url
 
 
@@ -63,7 +63,7 @@ def download_chapter(url):
     except ValueError as e:
         page = urllib.request.urlopen("http://mangapark.me" + url)
 
-    soup = BeautifulSoup(page)
+    soup = BeautifulSoup(page, "html.parser")
     imgs_wrappers = soup.find_all("a", {"class": "img-link"})
     filenames = []
     for i in imgs_wrappers:
@@ -79,7 +79,7 @@ def download_chapter(url):
 
 def download_manga(url, chapter=False, min_max=False):
     page = urllib.request.urlopen(url)
-    soup = BeautifulSoup(page)
+    soup = BeautifulSoup(page, "html.parser")
 
     streams = soup.find_all("div", {"class": "stream"})
     stream_lens = []
