@@ -1,19 +1,33 @@
-import urllib.request
-import urllib3
-import img2pdf
+"""Mangapark downloader.
+
+Example:
+    Download chapter 20 for the manga Ajin Miura Tsuina
+
+        $ python3 main.py -m http://mangapark.me/manga/ajin-miura-tsuina/ -chapter 20
+"""
 import re
 import os
+import sys
 import argparse
+import urllib.request
+import img2pdf
 from bs4 import BeautifulSoup
 
-def parse_url_to_manga_info(url):
+def parse_url_to_manga_info(url: str) -> str:
+    """Extracts the title of a manga from an URL.
+    """
     url = re.sub('http://', '', url)
     url = re.sub('mangapark.me/manga/', '', url)
     title = url.split("/")[0]
     return title
 
 
-def parse_url_to_chapter_info(url):
+def parse_url_to_chapter_info(url: str) -> (str, str, str, str):
+    """Extract manga info from the URL.
+
+    Returns:
+        4-tuple containing the mangas title, version, chapter and url
+    """
     url = re.sub("http://", '', url)
     url = re.sub("mangapark.me", '', url)
     url = re.sub("/manga/", '', url)
@@ -30,12 +44,21 @@ def parse_url_to_chapter_info(url):
     return title, version, chapter, url
 
 
-def ensure_directory_exist(directory):
+def ensure_directory_exist(directory: str) -> None:
+    """Creates a directory, if it doesn't exist yet."""
     if not os.path.exists(directory):
         os.makedirs(directory)
 
 
-def input_images(path):
+def input_images(path: str) -> bytes:
+    """Reads an image from the specified source.
+
+    Args:
+        path: The path of the image.
+
+    Returns:
+        The raw image data.
+    """
     if path == '-':
         rawdata = sys.stdin.buffer.read()
     else:
@@ -56,7 +79,14 @@ def input_images(path):
     return rawdata
 
 
-def convert_to_pdf(os_dir, chapter, filenames):
+def convert_to_pdf(os_dir: str, chapter: str, filenames: list) -> None:
+    """Converts images to a PDF.
+
+    Args:
+        os_dir: Directory to save PDF in.
+        chapter: Title of the PDF.
+        filenames: Images to construct the PDF from.
+    """
     print("Converting chapter %s to pdf..." % chapter)
 
     pdf_bytes = None
@@ -80,12 +110,13 @@ def convert_to_pdf(os_dir, chapter, filenames):
     print("Conversion completed!")
 
 
-def download_chapter(url):
-    title, version, chapter, os_dir = parse_url_to_chapter_info(url)
+def download_chapter(url: str) -> None:
+    """Downloads the chapter specified by the url."""
+    title, _, chapter, os_dir = parse_url_to_chapter_info(url)
     ensure_directory_exist(os_dir)
     try:
         page = urllib.request.urlopen(url)
-    except ValueError as e:
+    except ValueError:
         page = urllib.request.urlopen("http://mangapark.me" + url)
 
     soup = BeautifulSoup(page, "html.parser")
@@ -102,7 +133,15 @@ def download_chapter(url):
     convert_to_pdf(os_dir, chapter, filenames)
 
 
-def download_manga(url, chapter=False, min_max=False):
+def download_manga(url: str, chapter: int=None, min_max: (int, int)=None) -> None:
+    """Downloads chapters of a manga.
+
+    Args:
+        url: The URL of the manga.
+        chapter: The chapter to download.  If no chapter is specified, the
+            min_max parameter will be used.
+        min_max: The range of chapters to download.
+    """
     page = urllib.request.urlopen(url)
     soup = BeautifulSoup(page, "html.parser")
 
@@ -129,14 +168,15 @@ def download_manga(url, chapter=False, min_max=False):
 
 
 def main():
+    """Downloads manga specified in command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--manga-url')
     parser.add_argument('-c', '--chapter')
-    parser.add_argument('-cs', '--chapters', nargs = 2)
+    parser.add_argument('-cs', '--chapters', nargs=2)
 
     args = parser.parse_args()
     print(args)
-    if args.manga_url == None:
+    if args.manga_url is None:
         print("Please specify the URL of the manga on mangapark.me")
         return
     elif args.chapters != None:
