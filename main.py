@@ -75,7 +75,6 @@ def download_chapter(url, height):
         dir_filename = os_dir + "/" + os.path.basename(img_url)
         urllib.request.urlretrieve(img_url, dir_filename)
         new_dir_filename = rezise(dir_filename, height)
-        print(">>>>>>>>>>> %s" % new_dir_filename);
         filenames.append(new_dir_filename)
 
     convert_to_pdf(os_dir, chapter, filenames)
