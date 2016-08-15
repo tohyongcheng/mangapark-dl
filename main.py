@@ -125,7 +125,7 @@ def download_chapter(url: str, height: int) -> None:
     imgs_wrappers = soup.find_all("a", {"class": "img-link"})
     filenames = []
     for i in imgs_wrappers:
-        img_url = i.img['src']
+        img_url = parse_url(i.img['src'])
         filename = img_url.split('/')[-1]
         print("Downloading %s %s %s..." % (title, chapter, filename))
         dir_filename = os_dir + "/" + os.path.basename(img_url)
@@ -134,6 +134,9 @@ def download_chapter(url: str, height: int) -> None:
         filenames.append(new_dir_filename)
 
     convert_to_pdf(os_dir, chapter, filenames)
+
+def parse_url(url: str) -> str:
+    return re.sub(r'\?.*', '', url)
 
 def resize(filename: str, height: int) -> str:
     if height == None:
