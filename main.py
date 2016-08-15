@@ -82,7 +82,7 @@ def download_chapter(url, height):
 def rezise(filename, height):
     if height == None:
         return filename
-    print("Resizing %s to %s..." % (filename, height))
+    print("Resizing %s to %spx height..." % (filename, height))
     with open(filename, 'r+b') as f:
         with Image.open(f) as image:
             cover = resizeimage.resize_height(image, height)
