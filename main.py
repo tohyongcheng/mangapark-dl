@@ -130,12 +130,12 @@ def download_chapter(url: str, height: int) -> None:
         print("Downloading %s %s %s..." % (title, chapter, filename))
         dir_filename = os_dir + "/" + os.path.basename(img_url)
         urllib.request.urlretrieve(img_url, dir_filename)
-        new_dir_filename = rezise(dir_filename, height)
+        new_dir_filename = resize(dir_filename, height)
         filenames.append(new_dir_filename)
 
     convert_to_pdf(os_dir, chapter, filenames)
 
-def rezise(filename, height):
+def resize(filename: str, height: int) -> str:
     if height == None:
         return filename
     print("Resizing %s to %spx height..." % (filename, height))
