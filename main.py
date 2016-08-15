@@ -12,6 +12,8 @@ import argparse
 import urllib.request
 import img2pdf
 from bs4 import BeautifulSoup
+from PIL import Image
+from resizeimage import resizeimage
 
 def parse_url_to_manga_info(url: str) -> str:
     """Extracts the title of a manga from an URL.
@@ -110,7 +112,7 @@ def convert_to_pdf(os_dir: str, chapter: str, filenames: list) -> None:
     print("Conversion completed!")
 
 
-def download_chapter(url: str) -> None:
+def download_chapter(url: str, height: int) -> None:
     """Downloads the chapter specified by the url."""
     title, _, chapter, os_dir = parse_url_to_chapter_info(url)
     ensure_directory_exist(os_dir)
@@ -128,12 +130,23 @@ def download_chapter(url: str) -> None:
         print("Downloading %s %s %s..." % (title, chapter, filename))
         dir_filename = os_dir + "/" + os.path.basename(img_url)
         urllib.request.urlretrieve(img_url, dir_filename)
-        filenames.append(dir_filename)
+        new_dir_filename = resize(dir_filename, height)
+        filenames.append(new_dir_filename)
 
     convert_to_pdf(os_dir, chapter, filenames)
 
+def resize(filename: str, height: int) -> str:
+    if height == None:
+        return filename
+    print("Resizing %s to %spx height..." % (filename, height))
+    with open(filename, 'r+b') as f:
+        with Image.open(f) as image:
+            cover = resizeimage.resize_height(image, height)
+            new_filename = filename + '.res';
+            cover.save(new_filename, image.format)
+    return new_filename
 
-def download_manga(url: str, chapter: int=None, min_max: (int, int)=None) -> None:
+def download_manga(url: str, chapter: int=None, min_max: (int, int)=None, height: int=None) -> None:
     """Downloads chapters of a manga.
 
     Args:
@@ -141,6 +154,7 @@ def download_manga(url: str, chapter: int=None, min_max: (int, int)=None) -> Non
         chapter: The chapter to download.  If no chapter is specified, the
             min_max parameter will be used.
         min_max: The range of chapters to download.
+        height: The height to witch resize all images (keeping the aspect ratio)
     """
     page = urllib.request.urlopen(url)
     soup = BeautifulSoup(page, "html.parser")
@@ -160,10 +174,10 @@ def download_manga(url: str, chapter: int=None, min_max: (int, int)=None) -> Non
         chapter_url = c.em.find_all("a")[-1]['href']
         chapter_no = float(parse_url_to_chapter_info(chapter_url)[2][1: ])
         if chapter and chapter_no == chapter:
-            download_chapter(chapter_url)
+            download_chapter(chapter_url, height)
             break
         if min_max and chapter_no >= min_max[0] and chapter_no <= min_max[1]:
-            download_chapter(chapter_url)
+            download_chapter(chapter_url, height)
             continue
 
 
@@ -171,6 +185,7 @@ def main():
     """Downloads manga specified in command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--manga-url')
+    parser.add_argument('-s', '--size', '--height', type=int, help='Height to resize images to (it will keet the aspect ratio)')
     parser.add_argument('-c', '--chapter')
     parser.add_argument('-cs', '--chapters', nargs=2)
 
@@ -181,9 +196,9 @@ def main():
         return
     elif args.chapters != None:
         assert isinstance(args.chapters, list)
-        download_manga(args.manga_url, min_max=[float(x) for x in args.chapters])
+        download_manga(args.manga_url, min_max=[float(x) for x in args.chapters], height=args.size)
     elif args.chapter != None:
-        download_manga(args.manga_url, chapter=int(args.chapter))
+        download_manga(args.manga_url, chapter=int(args.chapter), height=args.size)
 
 
 if __name__ == "__main__":
