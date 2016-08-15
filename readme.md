@@ -1,6 +1,6 @@
 # Introduction
 
-A script to download your favourite mangas on mangapark.me and convert them to .pdf formats.
+A script to download your favourite mangas on mangapark.me and convert them to `.pdf` formats.
 
 ## Instructions
 
