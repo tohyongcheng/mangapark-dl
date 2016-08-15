@@ -5,6 +5,8 @@ import re
 import os
 import argparse
 from bs4 import BeautifulSoup
+from PIL import Image
+from resizeimage import resizeimage
 
 def parse_url_to_manga_info(url):
     url = re.sub('http://', '', url)
@@ -55,7 +57,7 @@ def convert_to_pdf(os_dir, chapter, filenames):
     print("Conversion completed!")
 
 
-def download_chapter(url):
+def download_chapter(url, height):
     title, version, chapter, os_dir = parse_url_to_chapter_info(url)
     ensure_directory_exist(os_dir)
     try:
@@ -72,12 +74,24 @@ def download_chapter(url):
         print("Downloading %s %s %s..." % (title, chapter, filename))
         dir_filename = os_dir + "/" + os.path.basename(img_url)
         urllib.request.urlretrieve(img_url, dir_filename)
-        filenames.append(dir_filename)
+        new_dir_filename = rezise(dir_filename, height)
+        print(">>>>>>>>>>> %s" % new_dir_filename);
+        filenames.append(new_dir_filename)
 
     convert_to_pdf(os_dir, chapter, filenames)
 
+def rezise(filename, height):
+    if height == None:
+        return filename
+    print("Resizing %s to %s..." % (filename, height))
+    with open(filename, 'r+b') as f:
+        with Image.open(f) as image:
+            cover = resizeimage.resize_height(image, height)
+            new_filename = filename + '.res';
+            cover.save(new_filename, image.format)
+    return new_filename
 
-def download_manga(url, chapter=False, min_max=False):
+def download_manga(url, chapter=False, min_max=False, height=None):
     page = urllib.request.urlopen(url)
     soup = BeautifulSoup(page, "html.parser")
 
@@ -96,16 +110,17 @@ def download_manga(url, chapter=False, min_max=False):
         chapter_url = c.em.find_all("a")[-1]['href']
         chapter_no = float(parse_url_to_chapter_info(chapter_url)[2][1: ])
         if chapter and chapter_no == chapter:
-            download_chapter(chapter_url)
+            download_chapter(chapter_url, height)
             break
         if min_max and chapter_no >= min_max[0] and chapter_no <= min_max[1]:
-            download_chapter(chapter_url)
+            download_chapter(chapter_url, height)
             continue
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--manga-url')
+    parser.add_argument('-s', '--size', '--height', type=int, help='Height to resize images to (it will keet the aspect ratio)')
     parser.add_argument('-c', '--chapter')
     parser.add_argument('-cs', '--chapters', nargs = 2)
 
@@ -116,9 +131,9 @@ def main():
         return
     elif args.chapters != None:
         assert isinstance(args.chapters, list)
-        download_manga(args.manga_url, min_max=[float(x) for x in args.chapters])
+        download_manga(args.manga_url, min_max=[float(x) for x in args.chapters], height=args.size)
     elif args.chapter != None:
-        download_manga(args.manga_url, chapter=int(args.chapter))
+        download_manga(args.manga_url, chapter=int(args.chapter), height=args.size)
 
 
 if __name__ == "__main__":

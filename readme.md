@@ -17,3 +17,4 @@ $ python3 main.py -m http://mangapark.me/manga/ajin-miura-tsuina/ -chapters 19 4
 - Python 3
 - img2pdf
 - BeautifulSoup4
+- python-resize-image
