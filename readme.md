@@ -15,6 +15,7 @@ $ python3 main.py -m http://mangapark.me/manga/ajin-miura-tsuina/ --chapters 19 
 `--size` is optional on both ways of downloading. Without it, it will not resize.
 _Sometimes the `img2pdf` will fail due to the size of the original downloaded images. I recommend `--size 1000`_
 
+## System Dependencies
 - Python 3
 
 ## Python Dependencies
