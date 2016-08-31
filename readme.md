@@ -21,10 +21,10 @@ _Sometimes the `img2pdf` will fail due to the size of the original downloaded im
 
 
 ## TODOs
-[] Create a python plugin to easily download manga
-[] Create tests
-[] Enable Python 2 Support
-[] Enable support to place in Dropbox
-[] Continue download from where it is left off?
+[ ] Create a python plugin to easily download manga
+[ ] Create tests
+[ ] Enable Python 2 Support
+[ ] Enable support to place in Dropbox
+[ ] Continue download from where it is left off?
 
 
