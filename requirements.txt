@@ -1,0 +1,5 @@
+urllib
+img2pdf
+bs4
+Pillow
+python-resize-image

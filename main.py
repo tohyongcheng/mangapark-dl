@@ -1,8 +1,8 @@
-"""Mangapark downloader.
+"""
+Mangapark-DL: Downloads manga and converts to PDF for the site www.mangapark.com
 
 Example:
     Download chapter 20 for the manga Ajin Miura Tsuina
-
         $ python3 main.py -m http://mangapark.me/manga/ajin-miura-tsuina/ -chapter 20
 """
 import re
@@ -15,30 +15,34 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from resizeimage import resizeimage
 
-def parse_url_to_manga_info(url: str) -> str:
-    """Extracts the title of a manga from an URL.
+
+def parse_url_to_manga_info(url):
     """
+    Extracts the title of a manga from an URL.
+    :param url: a string that denotes the URL
+    :return: the title of a manga
+    """
+
     url = re.sub('http://', '', url)
     url = re.sub('mangapark.me/manga/', '', url)
     title = url.split("/")[0]
     return title
 
 
-def parse_url_to_chapter_info(url: str) -> (str, str, str, str):
-    """Extract manga info from the URL.
-
-    Returns:
-        4-tuple containing the mangas title, version, chapter and url
+def parse_url_to_chapter_info(url):
     """
+    Extract manga info from the URL, namely: ()
+    :param url: a string that denotes the URL
+    :return: 4-tuple containing the manga's title, version, chapter and url
+    """
+
     url = re.sub("http://", '', url)
     url = re.sub("mangapark.me", '', url)
     url = re.sub("/manga/", '', url)
 
-    # compensate for mangapark's different url formatting schemes
-    title, version, chapter = None, None, None
     if len(url.split("/")) == 3:
         title, version, chapter = url.split("/")
-    elif len(url.split("/")):
+    elif len(url.split("/")) == 4:
         title, _, version, chapter = url.split("/")
     else:
         raise ValueError("Couldn't parse URL")
@@ -46,27 +50,29 @@ def parse_url_to_chapter_info(url: str) -> (str, str, str, str):
     return title, version, chapter, url
 
 
-def ensure_directory_exist(directory: str) -> None:
-    """Creates a directory, if it doesn't exist yet."""
+def ensure_directory_exist(directory):
+    """
+    Creates a directory, if it doesn't exist yet.
+    :param directory: directory file path
+    :return: None
+    """
     if not os.path.exists(directory):
         os.makedirs(directory)
 
 
-def input_images(path: str) -> bytes:
-    """Reads an image from the specified source.
-
-    Args:
-        path: The path of the image.
-
-    Returns:
-        The raw image data.
+def download_image(path):
     """
+    Reads an image from the specified source.
+    :param path: file path of the image
+    :return: raw image data in byte[]
+    """
+
     if path == '-':
-        rawdata = sys.stdin.buffer.read()
+        raw_data = sys.stdin.buffer.read()
     else:
         try:
             with open(path, "rb") as im:
-                rawdata = im.read()
+                raw_data = im.read()
         except IsADirectoryError:
             raise argparse.ArgumentTypeError(
                 "\"%s\" is a directory" % path)
@@ -76,35 +82,39 @@ def input_images(path: str) -> bytes:
         except FileNotFoundError:
             raise argparse.ArgumentTypeError(
                 "\"%s\" does not exist" % path)
-    if len(rawdata) == 0:
+
+    if len(raw_data) == 0:
         raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
-    return rawdata
+
+    return raw_data
 
 
-def convert_to_pdf(os_dir: str, chapter: str, filenames: list) -> None:
-    """Converts images to a PDF.
-
-    Args:
-        os_dir: Directory to save PDF in.
-        chapter: Title of the PDF.
-        filenames: Images to construct the PDF from.
+def convert_to_pdf(os_dir, chapter, file_names):
     """
+    Converts a collection of images to PDF format
+    :param os_dir: Directory to save PDF in.
+    :param chapter: Title of the PDF.
+    :param file_names: Images to construct the PDF from.
+    :return:
+    """
+
     print("Converting chapter %s to pdf..." % chapter)
 
     pdf_bytes = None
+
     try:
-        pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames])
+        pdf_bytes = img2pdf.convert(*[download_image(path) for path in file_names])
     except img2pdf.PdfTooLargeError:
         # Sometimes the images are registered as having a dpi of 1.
-        # Because PDF has a limitation of 200 iches max per side, a
+        # Because PDF has a limitation of 200 inches max per side, a
         # special layout_fun has to be used, as to prevent an exception.
-
         # default manga size 5"x7"
+
         layout_fun = img2pdf.get_layout_fun(pagesize=(None, img2pdf.in_to_pt(7)),
                                             imgsize=None, border=None,
                                             fit=img2pdf.FitMode.into,
                                             auto_orient=False)
-        pdf_bytes = img2pdf.convert(*[input_images(path) for path in filenames],
+        pdf_bytes = img2pdf.convert(*[download_image(path) for path in file_names],
                                     layout_fun=layout_fun)
 
     file = open("%s/%s.pdf" % (os_dir, chapter), "wb")
@@ -112,8 +122,15 @@ def convert_to_pdf(os_dir: str, chapter: str, filenames: list) -> None:
     print("Conversion completed!")
 
 
-def download_chapter(url: str, height: int) -> None:
-    """Downloads the chapter specified by the url."""
+def download_chapter(url, height):
+    """
+    Downloads the chapter specified by the url into your file directory
+    :param url: string denoting the url
+    :param height: int denoting the height of the image you want to download in
+    :return: None.
+
+    """
+
     title, _, chapter, os_dir = parse_url_to_chapter_info(url)
     ensure_directory_exist(os_dir)
     try:
@@ -123,42 +140,56 @@ def download_chapter(url: str, height: int) -> None:
 
     soup = BeautifulSoup(page, "html.parser")
     imgs_wrappers = soup.find_all("a", {"class": "img-link"})
-    filenames = []
+    file_names = []
     for i in imgs_wrappers:
-        img_url = parse_url(i.img['src'])
+        img_url = strip_parameters_from_url(i.img['src'])
         filename = img_url.split('/')[-1]
         print("Downloading %s %s %s..." % (title, chapter, filename))
         dir_filename = os_dir + "/" + os.path.basename(img_url)
         urllib.request.urlretrieve(img_url, dir_filename)
         new_dir_filename = resize(dir_filename, height)
-        filenames.append(new_dir_filename)
+        file_names.append(new_dir_filename)
 
-    convert_to_pdf(os_dir, chapter, filenames)
+    convert_to_pdf(os_dir, chapter, file_names)
 
-def parse_url(url: str) -> str:
+
+def strip_parameters_from_url(url):
+    """
+    Parses the URL and strips away the parameters
+    :param url: string URL with parameters
+    :return: string URL without parameters
+    """
     return re.sub(r'\?.*', '', url)
 
-def resize(filename: str, height: int) -> str:
-    if height == None:
+
+def resize(filename, height=None):
+    """
+    Resize the image to a certain proportion by height
+    :param filename: string path of file to the image
+    :param height: int
+    :return: new filename of the image
+    """
+    if height is None:
         return filename
     print("Resizing %s to %spx height..." % (filename, height))
     with open(filename, 'r+b') as f:
         with Image.open(f) as image:
             cover = resizeimage.resize_height(image, height)
-            new_filename = filename + '.res';
+            new_filename = filename + '.res'
             cover.save(new_filename, image.format)
     return new_filename
 
-def download_manga(url: str, chapter: int=None, min_max: (int, int)=None, height: int=None) -> None:
-    """Downloads chapters of a manga.
 
-    Args:
-        url: The URL of the manga.
-        chapter: The chapter to download.  If no chapter is specified, the
-            min_max parameter will be used.
-        min_max: The range of chapters to download.
-        height: The height to witch resize all images (keeping the aspect ratio)
+def download_manga(url, chapter=None, min_max=None, height=None):
     """
+    Downloads the chapters of a manga
+    :param url: string url of the manga
+    :param chapter: int chapter to download. if no chapter is specified, the min_max parameter is used.
+    :param min_max: the inclusive range of chapters to download, e.g [1,10] -> chapters 1 to 10
+    :param height: The height to witch resize all images (keeping the aspect ratio)
+    :return: None
+    """
+
     page = urllib.request.urlopen(url)
     soup = BeautifulSoup(page, "html.parser")
 
@@ -175,32 +206,38 @@ def download_manga(url: str, chapter: int=None, min_max: (int, int)=None, height
     chapters = best_stream.find_all("li")
     for c in chapters[::-1]:
         chapter_url = c.em.find_all("a")[-1]['href']
-        chapter_no = float(parse_url_to_chapter_info(chapter_url)[2][1: ])
+        chapter_no = float(parse_url_to_chapter_info(chapter_url)[2][1:])
+
         if chapter and chapter_no == chapter:
             download_chapter(chapter_url, height)
             break
-        if min_max and chapter_no >= min_max[0] and chapter_no <= min_max[1]:
+        elif min_max and min_max[0] <= chapter_no <= min_max[1]:
             download_chapter(chapter_url, height)
-            continue
 
 
 def main():
-    """Downloads manga specified in command line arguments."""
+    """
+    Downloads manga specified in command line based on the following arguments:
+    """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--manga-url')
-    parser.add_argument('-s', '--size', '--height', type=int, help='Height to resize images to (it will keet the aspect ratio)')
-    parser.add_argument('-c', '--chapter')
-    parser.add_argument('-cs', '--chapters', nargs=2)
+    parser.add_argument('-m', '--manga-url', help="The url of the mangapark manga to download")
+    parser.add_argument('-s', '--size', '--height', type=int,
+                        help='Height to resize images to (it will keep the aspect ratio)')
+    parser.add_argument('-c', '--chapter', help="The chapter number that you specifically want to download")
+    parser.add_argument('-cs', '--chapters', nargs=2, help="An inclusive range of chapters you want to download")
 
     args = parser.parse_args()
     print(args)
+
     if args.manga_url is None:
         print("Please specify the URL of the manga on mangapark.me")
         return
-    elif args.chapters != None:
+
+    elif args.chapters is not None:
         assert isinstance(args.chapters, list)
         download_manga(args.manga_url, min_max=[float(x) for x in args.chapters], height=args.size)
-    elif args.chapter != None:
+
+    elif args.chapter is not None:
         download_manga(args.manga_url, chapter=int(args.chapter), height=args.size)
 
 

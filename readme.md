@@ -16,10 +16,15 @@ $ python3 main.py -m http://mangapark.me/manga/ajin-miura-tsuina/ --chapters 19 
 _Sometimes the `img2pdf` will fail due to the size of the original downloaded images. I recommend `--size 1000`_
 
 ## System Dependencies
+
 - Python 3
 
-## Python Dependencies
-- urllib3
-- img2pdf
-- BeautifulSoup4
-- python-resize-image
+
+## TODOs
+[] Create a python plugin to easily download manga
+[] Create tests
+[] Enable Python 2 Support
+[] Enable support to place in Dropbox
+[] Continue download from where it is left off?
+
+
